@@ -1,0 +1,15 @@
+{
+    "name": "sb/zero_lib",
+    "autoload": {
+        "psr-4": {
+            "app\\": "src"
+        }
+    },
+    "authors": [
+        {
+            "name": "sbovyrin",
+            "email": "sbovyrin@gmail.com"
+        }
+    ],
+    "require": {}
+}
