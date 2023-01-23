@@ -2,10 +2,17 @@
 
 namespace app;
 
+// TODO: add app params validation
 class App
 {
     static function run(array $config)
     {
+        putenv("DB_TYPE=mysql");
+        putenv("DB_HOST=smart_mariadb");
+        putenv("DB_NAME=sid");
+        putenv("DB_USER=root");
+        putenv("DB_PASSWORD=toor");
+
         /*
          * TODO: auto doc
          */
@@ -39,13 +46,13 @@ class App
             throw \Exception('UNKNOWN_ROUTE');
         };
 
-        $connect = static function ($params) {
+        $connect = static function () {
             static $h;
             if (empty($h))
                 $h = new \PDO(
-                    'mysql:host=smart_mariadb;dbname=sid',
-                    'root',
-                    'toor',
+                    'mysql:host=' . getenv('DB_HOST') . ';dbname=' . getenv('DB_NAME'),
+                    getenv('DB_USER'),
+                    getenv('DB_PASSWORD'),
                     [
                         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
                     ]
@@ -73,15 +80,15 @@ class App
             return $src1;
         };
 
-        $execQuery = static function ($q) use ($connect) {
-            $h = $connect([]);
+        $query = static function ($q) use ($connect) {
+            $h = $connect();
 
             $pkIncluded = true;
-            $pkFields = $h->prepare(<<<SQL
+            $pkField = $h->prepare(<<<SQL
             SHOW KEYS FROM {$q['src']} WHERE Key_name='PRIMARY'
             SQL);
-            $pkFields->execute();
-            $pkField = $q['src'] . '.' . $pkFields->fetch()['Column_name'];
+            $pkField->execute();
+            $pkField = $q['src'] . '.' . $pkField->fetch()['Column_name'];
 
             if (!in_array($pkField, $q['cols'])) {
                 $pkIncluded = false;
@@ -142,12 +149,17 @@ class App
             return $xs;
         };
 
+        // storage api design
+        comp(
+            cols(['id', 'name'])
+        )(db('users'));
+
         try {
             echo "<pre>"; var_dump(
-                $execQuery(
+                $query(
                     $join(
                         $cols(['id', 'name'], 'users'),
-                        $cols(['brand'], 'cars'),
+                        $cols(['name'], 'cars'),
                         ['id', 'user_id']
                     )
                 )
